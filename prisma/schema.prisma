@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  createdAt     DateTime  @default(now())
+  datasets      Dataset[]
+  reports       Report[]
+}
+
+model Dataset {
+  id            String    @id @default(cuid())
+  userId        String
+  name          String
+  rawData       String    // JSON string of parsed CSV
+  profileStats  String    // JSON string: { rowCount, missingValues, badRows }
+  createdAt     DateTime  @default(now())
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reports       Report[]
+}
+
+model Report {
+  id            String      @id @default(cuid())
+  userId        String
+  datasetId     String
+  title         String      @default("Untitled Report")
+  blocks        String      // JSON string of report blocks
+  filters       String      @default("{}") // JSON string of active filters
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dataset       Dataset     @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+  sharedLinks   SharedLink[]
+}
+
+model SharedLink {
+  id            String    @id @default(cuid())
+  reportId      String
+  token         String    @unique
+  expiresAt     DateTime?
+  isRevoked     Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  report        Report    @relation(fields: [reportId], references: [id], onDelete: Cascade)
+}
